@@ -29,20 +29,20 @@ function api(method, host, path, body, contentType) {
 
 (async () => {
   const rel = await api('POST', 'api.github.com', `/repos/${OWNER}/${REPO}/releases`, JSON.stringify({
-    tag_name: 'v1.0.0',
+    tag_name: 'v1.1.0',
     name: 'Primordial Life 1.0.0',
     body: 'Portable Windows executable — no installation or registration required.\n\n' +
-      'Download `Primordial.Life.1.0.0.exe`, run it, watch evolution happen.\n\n' +
+      'Download `Primordial.Life.1.1.0.exe`, run it, watch evolution happen.\n\n' +
       'Controls: Space=pause, R=restart, +/-=speed, click=inspect biot, F11=fullscreen, Esc=quit.',
     draft: false, prerelease: false
   }));
   console.log('release:', rel.status, rel.json.html_url || rel.json.message);
   if (rel.status !== 201) return;
-  const exePath = 'release/Primordial Life 1.0.0.exe';
+  const exePath = 'release/Primordial Life 1.1.0.exe';
   const buf = fs.readFileSync(exePath);
   console.log('uploading exe,', (buf.length / 1048576).toFixed(1), 'MB...');
   const up = await api('POST', 'uploads.github.com',
-    `/repos/${OWNER}/${REPO}/releases/${rel.json.id}/assets?name=${encodeURIComponent('Primordial.Life.1.0.0.exe')}`,
+    `/repos/${OWNER}/${REPO}/releases/${rel.json.id}/assets?name=${encodeURIComponent('Primordial.Life.1.1.0.exe')}`,
     buf, 'application/octet-stream');
   console.log('asset:', up.status, up.json.browser_download_url || up.json.message);
 })().catch(e => { console.error(e); process.exit(1); });

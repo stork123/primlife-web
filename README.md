@@ -14,6 +14,8 @@ with Electron.
 
 ## Features
 
+- **[Reading the Biots: A Field Guide](docs/BIOT-GUIDE.md)** — what the colors
+  and segments mean, who eats whom, and how evolution plays out on screen
 - Faithful port of the original simulation core from Spofford's GPL source release:
   - **ISAAC RNG** (Bob Jenkins) — same generator as the original
   - **Genotype**: up to 8 limbs (optionally mirrored), 10 segments per limb,
