@@ -1,0 +1,116 @@
+// Canvas2D renderer + main loop for Primordial Life
+'use strict';
+const { Environment } = require('./sim.js');
+const G = require('./genotype.js');
+
+const PEN_COLORS = [
+  '#00ff00', // GREEN
+  '#0000ff', // BLUE
+  '#ff0000', // RED
+  '#00ffff', // LBLUE
+  '#ffffff', // WHITE
+  '#008000', // DARK_GREEN
+  '#000080', // DARK_BLUE
+  '#800000', // DARK_RED
+  '#008080', // DARK_LBLUE
+  '#808080', // GREY
+  '#ffff00', // YELLOW
+  '#000000', // BLACK
+  '#ff00ff'  // PURPLE
+];
+
+const canvas = document.getElementById('world');
+const ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+const inspector = document.getElementById('inspector');
+
+let env = null;
+let paused = false;
+let stepsPerFrame = 1;
+let selected = null;
+
+function newWorld() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  env = new Environment(canvas.width, canvas.height, (Date.now() & 0x7fffffff), { initialPopulation: 20 });
+  selected = null;
+  inspector.style.display = 'none';
+}
+
+window.addEventListener('resize', () => {
+  // preserve population, resize world
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  if (env) { env.width = canvas.width; env.height = canvas.height; }
+});
+
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { paused = !paused; e.preventDefault(); }
+  else if (e.key === 'r' || e.key === 'R') newWorld();
+  else if (e.key === '+' || e.key === '=') stepsPerFrame = Math.min(16, stepsPerFrame + 1);
+  else if (e.key === '-') stepsPerFrame = Math.max(1, stepsPerFrame - 1);
+});
+
+canvas.addEventListener('mousedown', (e) => {
+  const x = e.clientX, y = e.clientY;
+  selected = null;
+  for (const b of env.biots) {
+    if (x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) { selected = b; break; }
+  }
+  if (!selected) inspector.style.display = 'none';
+});
+
+function drawBiot(b) {
+  const sick = b.nSick > 0;
+  let lastColor = -1;
+  for (let i = 0; i < b.genes; i++) {
+    if (b.state[i] <= 0) continue;
+    let pen = sick ? G.PURPLE_LEAF : b.nType[i];
+    if (!sick && b.state[i] !== b.distance[i]) pen += G.DIM_COLOR; // injured segment = dark shade
+    if (pen >= PEN_COLORS.length) pen = G.GREY_LEAF;
+    if (pen !== lastColor) { ctx.strokeStyle = PEN_COLORS[pen]; lastColor = pen; }
+    ctx.beginPath();
+    ctx.moveTo(b.x1(i) + 0.5, b.y1(i) + 0.5);
+    ctx.lineTo(b.x2(i) + 0.5, b.y2(i) + 0.5);
+    ctx.stroke();
+  }
+  if (b === selected) {
+    ctx.strokeStyle = '#808080';
+    ctx.strokeRect(b.left - 2, b.top - 2, b.width() + 4, b.height() + 4);
+  }
+}
+
+function updateInspector() {
+  if (!selected) return;
+  if (!env.biots.includes(selected)) { selected = null; inspector.style.display = 'none'; return; }
+  const b = selected;
+  inspector.style.display = 'block';
+  inspector.textContent =
+    `Biot: ${b.name}:${b.generation}\n` +
+    `sex: ${b.trait.isMale() ? 'male' : 'female'}${b.trait.isAsexual() ? ' (asexual)' : ''}\n` +
+    `species: ${b.trait.getSpecies()}  limbs: ${b.trait.getLines()}${b.trait.isMirrored() ? ' mirrored' : ''}\n` +
+    `age: ${b.age} / ${b.maxAge}\n` +
+    `energy: ${Math.round(b.percentEnergy())}%  ratio: ${b.ratio}\n` +
+    `children: ${b.trait.getNumberOfChildren()}  fertilized: ${b.genes2 ? 'yes' : 'no'}\n` +
+    `green: ${b.colorDistance[0]}  red: ${b.colorDistance[2]}\n` +
+    `blue: ${b.colorDistance[1]}  white: ${b.colorDistance[4]}  lblue: ${b.colorDistance[3]}` +
+    (b.nSick ? '\n** SICK **' : '');
+}
+
+function frame() {
+  if (!paused) for (let s = 0; s < stepsPerFrame; s++) env.step();
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.lineWidth = 1;
+  for (const b of env.biots) drawBiot(b);
+  hud.textContent =
+    `Primordial Life  |  pop ${env.biots.length}  gen ${env.stats.generation}` +
+    `  births ${env.stats.births}  deaths ${env.stats.deaths}` +
+    `  extinctions ${env.stats.extinctions}` +
+    (paused ? '  [PAUSED]' : (stepsPerFrame > 1 ? `  x${stepsPerFrame}` : ''));
+  updateInspector();
+  requestAnimationFrame(frame);
+}
+
+newWorld();
+requestAnimationFrame(frame);

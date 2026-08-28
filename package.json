@@ -1,0 +1,23 @@
+{
+  "name": "primlife",
+  "version": "1.0.0",
+  "description": "Primordial Life — artificial life simulator (port of Jason Spofford's 1995-98 GPL original)",
+  "main": "electron/main.js",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "test": "node test/headless.js",
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.primlife.app",
+    "productName": "Primordial Life",
+    "files": ["electron/**/*", "src/**/*"],
+    "directories": { "output": "release" },
+    "win": { "target": ["portable"], "signAndEditExecutable": false }
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}
