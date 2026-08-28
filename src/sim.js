@@ -495,6 +495,7 @@ class Biot {
       enemy.copyGenes(this);
       enemy.mateId = this.id;
       enemy.newType = type;
+      this.env.emit('mate');
     }
     switch (this.env.options.leafContact[type][enemyType]) {
       case CONTACT_IGNORE: return false;
@@ -627,7 +628,7 @@ class Biot {
         nBiot.setBonus();
         born++;
       }
-      if (born > 0) this.genes2 = 0;
+      if (born > 0) { this.genes2 = 0; this.env.emit('birth'); }
     }
   }
 
@@ -735,7 +736,7 @@ class Biot {
     let bChangeSize = false;
     if (this.bDie) {
       this.genes -= 2; this.max_genes -= 2;
-      if (this.genes <= 0) return false;
+      if (this.genes <= 0) { this.env.emit('tooOld'); return false; }
       bChangeSize = true;
     } else if (this.genes < this.max_genes && (this.age & 0x07) === 0x07) {
       this.genes += MAX_GENES / MAX_SEGMENTS;
@@ -758,7 +759,11 @@ class Biot {
       this.energy += (this.turnBenefit - this.totalDistance);
       this.energy += Math.trunc(this.bonusRatio * this.turnBenefit);
     }
-    if (this.energy <= 0 || this.totalDistance <= 0) return false;
+    if (this.energy <= 0 || this.totalDistance <= 0) {
+      // original: Eaten if totalDistance<=0 or energy>=0, else NoEnergy
+      this.env.emit(this.totalDistance <= 0 || this.energy >= 0 ? 'eaten' : 'noEnergy');
+      return false;
+    }
 
     if ((this.age & 0x0F) === 0x0F) {
       this.checkReproduction();
@@ -838,8 +843,11 @@ class Environment {
     this.options.newType = nt;
     this.cursor = 0;
     this.sampleCounter = 0;
+    this.listeners = {};
     this.createBiots();
   }
+  on(event, fn) { (this.listeners[event] = this.listeners[event] || []).push(fn); }
+  emit(event) { const l = this.listeners[event]; if (l) for (const fn of l) fn(); }
   getID() { return ++this.uniqueID; }
   addBiot(b) { this.biots.push(b); }
   createBiots() {
@@ -887,6 +895,7 @@ class Environment {
     // extinction handling
     if (this.biots.length === 0) {
       this.stats.extinctions++;
+      this.emit('extinction');
       this.createBiots();
     }
   }

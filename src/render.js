@@ -2,6 +2,7 @@
 'use strict';
 const { Environment } = require('./sim.js');
 const G = require('./genotype.js');
+const Sounds = require('./sounds.js');
 
 const PEN_COLORS = [
   '#00ff00', // GREEN
@@ -33,6 +34,13 @@ function newWorld() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   env = new Environment(canvas.width, canvas.height, (Date.now() & 0x7fffffff), { initialPopulation: 20 });
+  env.on('birth', () => Sounds.birth());
+  env.on('mate', () => Sounds.mate());
+  env.on('eaten', () => Sounds.eaten());
+  env.on('noEnergy', () => Sounds.noEnergy());
+  env.on('tooOld', () => Sounds.tooOld());
+  env.on('extinction', () => Sounds.extinction());
+  Sounds.start();
   selected = null;
   inspector.style.display = 'none';
 }
@@ -47,6 +55,7 @@ window.addEventListener('resize', () => {
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') { paused = !paused; e.preventDefault(); }
   else if (e.key === 'r' || e.key === 'R') newWorld();
+  else if (e.key === 's' || e.key === 'S') Sounds.toggle();
   else if (e.key === '+' || e.key === '=') stepsPerFrame = Math.min(16, stepsPerFrame + 1);
   else if (e.key === '-') stepsPerFrame = Math.max(1, stepsPerFrame - 1);
 });
@@ -107,6 +116,7 @@ function frame() {
     `Primordial Life  |  pop ${env.biots.length}  gen ${env.stats.generation}` +
     `  births ${env.stats.births}  deaths ${env.stats.deaths}` +
     `  extinctions ${env.stats.extinctions}` +
+    (Sounds.isEnabled() ? '' : '  [MUTED]') +
     (paused ? '  [PAUSED]' : (stepsPerFrame > 1 ? `  x${stepsPerFrame}` : ''));
   updateInspector();
   requestAnimationFrame(frame);
