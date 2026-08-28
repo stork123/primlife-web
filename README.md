@@ -10,7 +10,7 @@ with Electron.
 > the red menace. White-lined biots inject their genetic code into others.
 > Evolution unfolds through mutation and crossover, generation after generation.
 
-![screenshot](docs/screenshot.png)
+**[⬇ Download the portable Windows exe](https://github.com/stork123/primlife-web/releases/latest)** — no install needed.
 
 ## Features
 
