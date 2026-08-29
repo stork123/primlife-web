@@ -4,21 +4,8 @@ const { Environment } = require('./sim.js');
 const G = require('./genotype.js');
 const Sounds = require('./sounds.js');
 
-const PEN_COLORS = [
-  '#00ff00', // GREEN
-  '#0000ff', // BLUE
-  '#ff0000', // RED
-  '#00ffff', // LBLUE
-  '#ffffff', // WHITE
-  '#008000', // DARK_GREEN
-  '#000080', // DARK_BLUE
-  '#800000', // DARK_RED
-  '#008080', // DARK_LBLUE
-  '#808080', // GREY
-  '#ffff00', // YELLOW
-  '#000000', // BLACK
-  '#ff00ff'  // PURPLE
-];
+const { PEN_COLORS } = require('./ui-colors.js');
+const { BiotEditor } = require('./editor.js');
 
 const canvas = document.getElementById('world');
 const ctx = canvas.getContext('2d');
@@ -43,7 +30,31 @@ function newWorld() {
   Sounds.start();
   selected = null;
   inspector.style.display = 'none';
+  if (editor) editor.hide();
+  if (pendingRelease) pendingRelease = null;
 }
+
+let editor = null;
+let pendingRelease = null;
+
+function placePendingRelease(cx, cy) {
+  if (!pendingRelease) return false;
+  pendingRelease.origin.x = cx; pendingRelease.origin.y = cy;
+  pendingRelease.vector.setX(cx); pendingRelease.vector.setY(cy);
+  pendingRelease.setScreenRect();
+  env.biots.push(pendingRelease);
+  pendingRelease = null;
+  Sounds.birth();
+  return true;
+}
+
+// instantiate editor (needs env, set up after newWorld runs)
+newWorld();
+editor = new BiotEditor(env, (biot) => {
+  pendingRelease = biot;
+  editor.hide();
+  hud.textContent += '  [click to release]';
+});
 
 window.addEventListener('resize', () => {
   // preserve population, resize world
@@ -56,12 +67,16 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') { paused = !paused; e.preventDefault(); }
   else if (e.key === 'r' || e.key === 'R') newWorld();
   else if (e.key === 's' || e.key === 'S') Sounds.toggle();
+  else if (e.key === 'e' || e.key === 'E') editor.toggle();
+  else if (e.key === 'Escape') { if (editor && editor.visible) editor.hide(); }
   else if (e.key === '+' || e.key === '=') stepsPerFrame = Math.min(16, stepsPerFrame + 1);
   else if (e.key === '-') stepsPerFrame = Math.max(1, stepsPerFrame - 1);
 });
 
 canvas.addEventListener('mousedown', (e) => {
   const x = e.clientX, y = e.clientY;
+  if (editor && editor.visible) return; // ignore clicks on world while editor open
+  if (pendingRelease && placePendingRelease(x, y)) return;
   selected = null;
   for (const b of env.biots) {
     if (x >= b.left && x <= b.right && y >= b.top && y <= b.bottom) { selected = b; break; }
@@ -122,5 +137,4 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
-newWorld();
 requestAnimationFrame(frame);
