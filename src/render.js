@@ -73,6 +73,9 @@ window.addEventListener('resize', () => {
 });
 
 window.addEventListener('keydown', (e) => {
+  // Don't let hotkeys fire when typing into inputs / selects / textareas
+  const tag = (e.target.tagName || '').toUpperCase();
+  if (['INPUT','SELECT','TEXTAREA'].includes(tag) || e.target.isContentEditable) return;
   if (e.code === 'Space') { paused = !paused; e.preventDefault(); }
   else if (e.key === 'r' || e.key === 'R') newWorld();
   else if (e.key === 's' || e.key === 'S') Sounds.toggle();
