@@ -50,11 +50,16 @@ function placePendingRelease(cx, cy) {
 
 // instantiate editor (needs env, set up after newWorld runs)
 newWorld();
-editor = new BiotEditor(env, (biot) => {
-  pendingRelease = biot;
-  editor.hide();
-  hud.textContent += '  [click to release]';
-});
+try {
+  editor = new BiotEditor(env, (biot) => {
+    pendingRelease = biot;
+    editor.hide();
+    hud.textContent += '  [click to release]';
+  });
+} catch (e) {
+  console.error('BiotEditor failed to initialize:', e);
+  editor = { visible: false, toggle() {}, hide() {}, show() {} };
+}
 
 window.addEventListener('resize', () => {
   // preserve population, resize world

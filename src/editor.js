@@ -176,10 +176,13 @@ class BiotEditor {
     b.trait.copyFrom(this.trait);
     b.commandArray.randomize(new (require('./rng.js').Randomizer)());
     b.max_genes = G.MAX_GENES; b.genes = G.MAX_GENES;
-    b.energy = b.adultBaseEnergy; // initialize won't set energy if it's a fresh trait copy
     b.initialize(true);
     b.setBonus();
-    b.placeRandom();
+    // NOTE: don't placeRandom() here — position is set by release/placePendingRelease.
+    // For preview, center the biot at origin so it renders in the preview canvas.
+    b.origin.x = 0; b.origin.y = 0;
+    b.vector.setX(0); b.vector.setY(0);
+    b.setScreenRect();
     if (this.name) b.name = this.name;
     b.generation = 0;
     b.motherId = 0;
@@ -193,11 +196,16 @@ class BiotEditor {
     const cx = W / 2, cy = H / 2;
     c.lineWidth = 1;
     for (let i = 0; i < b.genes; i++) {
-      if (b.state[i] <= 0 && b.distance[i] <= 0) continue;
+      if (b.state[i] <= 0) continue;
       c.strokeStyle = PEN_COLORS[b.nType[i]] || '#808080';
       c.beginPath();
-      c.moveTo(cx + b.startPt[i].x, cy + b.startPt[i].y);
-      c.lineTo(cx + b.stopPt[i].x, cy + b.stopPt[i].y);
+      const sx = cx + b.startPt[i].x + 0.5;
+      const sy = cy + b.startPt[i].y + 0.5;
+      const ex = cx + b.stopPt[i].x + 0.5;
+      const ey = cy + b.stopPt[i].y + 0.5;
+      if (sx === ex && sy === ey) continue; // zero-length segment
+      c.moveTo(sx, sy);
+      c.lineTo(ex, ey);
       c.stroke();
     }
   }
