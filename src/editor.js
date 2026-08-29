@@ -111,7 +111,9 @@ class BiotEditor {
     this.trait = new G.GeneTrait();
     const { Randomizer } = require('./rng.js');
     const rand = new Randomizer();
-    this.trait.randomize(MAX_SYMMETRY, MAX_LIMB_TYPES, MAX_SEGMENTS, rand);
+    // match sim.js randomCreate: args are option knobs (0 = default), NOT the MAX_ constants.
+    // Passing MAX_LIMB_TYPES here made lineRef index past geneLine[] and threw in calculateAngles.
+    this.trait.randomize(0, 0, 0, rand);
     this.name = '';
     this.syncToUi();
   }
@@ -260,7 +262,8 @@ class BiotEditor {
       mirrored: d.mirrored, sex: d.sex, asexual: d.asexual, chanceMale: d.chanceMale,
       offset: d.offset, maxAge: d.maxAge
     });
-    t.adultRatio = [...d.adultRatio]; t.lineRef = [...d.lineRef];
+    t.adultRatio = [...d.adultRatio];
+    t.lineRef = d.lineRef.map(r => Math.min(Math.max(r|0, 0), MAX_LIMB_TYPES - 1)); // clamp: bad refs crash calculateAngles
     if (d.geneLine) {
       d.geneLine.forEach((l, li) => l.forEach((s, si) => {
         const seg = t.geneLine[li].segment[si];

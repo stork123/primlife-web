@@ -12,12 +12,23 @@
   "build": {
     "appId": "com.primlife.app",
     "productName": "Primordial Life",
-    "files": ["electron/**/*", "src/**/*"],
-    "directories": { "output": "release" },
-    "win": { "target": ["portable"], "signAndEditExecutable": false }
+    "files": [
+      "electron/**/*",
+      "src/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "signAndEditExecutable": false
+    }
   },
   "devDependencies": {
     "electron": "^31.0.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "jsdom": "^29.1.1"
   }
 }
