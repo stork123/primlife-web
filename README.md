@@ -1,4 +1,4 @@
-# Primordial Life (Web / Electron Port)
+# Primordial Life (Windows Port)
 
 A modern port of **Primordial Life**, the classic 1995–98 artificial-life screensaver
 by Jason Spofford, rewritten in JavaScript and packaged as a portable Windows app
