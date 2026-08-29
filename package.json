@@ -14,7 +14,8 @@
     "productName": "Primordial Life",
     "files": [
       "electron/**/*",
-      "src/**/*"
+      "src/**/*",
+      "docs/BIOT-GUIDE.md"
     ],
     "directories": {
       "output": "release"

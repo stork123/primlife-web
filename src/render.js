@@ -6,6 +6,7 @@ const Sounds = require('./sounds.js');
 
 const { PEN_COLORS } = require('./ui-colors.js');
 const { BiotEditor } = require('./editor.js');
+const { Guide } = require('./guide.js');
 
 const canvas = document.getElementById('world');
 const ctx = canvas.getContext('2d');
@@ -36,6 +37,9 @@ function newWorld() {
 
 let editor = null;
 let pendingRelease = null;
+let guide;
+try { guide = new Guide(); }
+catch (e) { console.error('Guide failed to initialize:', e); guide = { visible: false, toggle() {}, hide() {} }; }
 
 function placePendingRelease(cx, cy) {
   if (!pendingRelease) return false;
@@ -73,7 +77,8 @@ window.addEventListener('keydown', (e) => {
   else if (e.key === 'r' || e.key === 'R') newWorld();
   else if (e.key === 's' || e.key === 'S') Sounds.toggle();
   else if (e.key === 'e' || e.key === 'E') editor.toggle();
-  else if (e.key === 'Escape') { if (editor && editor.visible) editor.hide(); }
+  else if (e.key === 'g' || e.key === 'G') guide.toggle();
+  else if (e.key === 'Escape') { if (guide.visible) guide.hide(); else if (editor && editor.visible) editor.hide(); }
   else if (e.key === '+' || e.key === '=') stepsPerFrame = Math.min(16, stepsPerFrame + 1);
   else if (e.key === '-') stepsPerFrame = Math.max(1, stepsPerFrame - 1);
 });
