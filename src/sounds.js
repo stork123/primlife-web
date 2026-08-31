@@ -17,7 +17,7 @@ function ac() {
 
 // preload WAV
 ['birth.wav'].forEach(file => {
-  const p = path.join(__dirname, '..', 'sounds', file);
+  const p = path.join(__dirname, 'sounds', file); // __dirname IS src/, WAV lives in src/sounds/
   buffers[file] = fs.readFileSync(p);
 });
 
