@@ -820,6 +820,7 @@ class Environment {
       startEnergy: 400 * 8, friction: 0.005, chance: 12,
       initialPopulation: 20, nSexual: 3, nSick: 200,
       armsPerBiot: 0, typesPerBiot: 0, segmentsPerArm: 0,
+      maxPopulation: 250,  // cap to prevent O(n²) collision slowdown freeze
       leafMass: null, leafContact: null, newType: null
     }, opts || {});
     // leafContact matrix
@@ -874,6 +875,21 @@ class Environment {
   }
   // one full pass over all biots (== one "generation" tick of the original Skip loop)
   step() {
+    // population cap: prevent O(n²) collision check blowup from freezing the sim
+    if (this.biots.length > this.options.maxPopulation) {
+      this.stats.generation++;
+      // still decay population via starvation; skip movement/collisions
+      const toRemove = [];
+      for (let i = 0; i < this.biots.length; i++) {
+        const b = this.biots[i];
+        b.age++;
+        b.energy -= b.totalDistance || 1; // starvation drain
+        if (b.energy <= 0 || b.totalDistance <= 0) { this.stats.deaths++; toRemove.push(i); }
+      }
+      for (let i = toRemove.length - 1; i >= 0; i--) this.biots.splice(toRemove[i], 1);
+      if (this.biots.length === 0) { this.stats.extinctions++; this.emit('extinction'); this.createBiots(); }
+      return;
+    }
     for (let i = 0; i < this.biots.length; i++) {
       const b = this.biots[i];
       if (!b.move()) {
