@@ -1,13 +1,15 @@
 // WebAudio sound effects for Primordial Life events.
 // Birth sound replaced with babycry.wav; others remain synthesized blips.
+// Uses fetch-based loading for web (Capacitor/Android) compatibility.
 'use strict';
-const fs = require('fs');
-const path = require('path');
 
 let ctx = null;
 let enabled = true;
 let lastPlay = {};
 const buffers = {};
+
+// detect environment — Electron has Node.js require/fs; web doesn't
+const isElectron = typeof window !== 'undefined' && typeof window.process !== 'undefined' && window.process.type === 'renderer';
 
 function ac() {
   if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -15,11 +17,34 @@ function ac() {
   return ctx;
 }
 
-// preload WAV
-['birth.wav'].forEach(file => {
-  const p = path.join(__dirname, 'sounds', file); // __dirname IS src/, WAV lives in src/sounds/
-  buffers[file] = fs.readFileSync(p);
-});
+// Preload WAV — fetch-based for web/Capacitor, synchronous in Electron
+// Wrapped in try/catch so web builds don't break on require('fs')
+function loadWav(file) {
+  if (isElectron) {
+    try {
+      // Lazy require only in Electron where fs/path are available
+      const fs = require('fs');
+      const path = require('path');
+      const p = path.join(__dirname, 'sounds', file);
+      const buf = fs.readFileSync(p);
+      const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+      ac().decodeAudioData(ab).then(b => { buffers[file] = b; });
+    } catch (e) {
+      console.error('Electron WAV load failed:', e);
+      // Fallback to fetch
+      fetch('sounds/' + file).then(r => r.arrayBuffer()).then(ab => ac().decodeAudioData(ab)).then(b => { buffers[file] = b; });
+    }
+  } else {
+    fetch('sounds/' + file)
+      .then(r => r.arrayBuffer())
+      .then(ab => ac().decodeAudioData(ab))
+      .then(b => { buffers[file] = b; })
+      .catch(e => console.error('Failed to load', file, ':', e));
+  }
+}
+
+// Preload birth.wav
+loadWav('birth.wav');
 
 // f0->f1 sweep, given wave/duration/volume
 function blip(name, f0, f1, dur, type, vol, throttleMs) {
@@ -43,12 +68,10 @@ const Sounds = {
   isEnabled() { return enabled; },
   start()      { blip('start',      220, 880, 0.35, 'triangle', 0.15); },
   birth() {
-    if (!enabled) return;
+    if (!enabled || !buffers['birth.wav']) return;
     const a = ac();
-    const b = a.createBuffer(1, buffers['birth.wav'].length / 4, 44100);
-    b.getChannelData(0).set(new Float32Array(buffers['birth.wav']));
     const s = a.createBufferSource();
-    s.buffer = b;
+    s.buffer = buffers['birth.wav'];
     s.connect(a.destination);
     s.start(a.currentTime);
   },

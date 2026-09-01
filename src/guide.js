@@ -1,16 +1,36 @@
 // In-app field guide — renders docs/BIOT-GUIDE.md as a styled overlay (G key).
+// Uses fetch in web/Capacitor mode, fs in Electron mode.
 'use strict';
-const fs = require('fs');
-const path = require('path');
 
-const GUIDE_PATH = path.join(__dirname, '..', 'docs', 'BIOT-GUIDE.md');
+const isElectron = typeof window !== 'undefined' && typeof window.process !== 'undefined' && window.process.type === 'renderer';
+
+const GUIDE_PATH = 'docs/BIOT-GUIDE.md';
 
 function escapeHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
-
 function inline(s) {
   return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>');
+}
+
+// Load guide markdown — async in web mode, sync in Electron
+function loadGuide() {
+  if (isElectron) {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const p = path.join(__dirname, '..', '..', 'docs', 'BIOT-GUIDE.md');
+      try { return Promise.resolve(fs.readFileSync(p, 'utf8')); }
+      catch (e) { console.error('Guide load failed (Electron):', e); return Promise.resolve('Could not load guide.'); }
+    } catch (e) {
+      // fs not available — fallback to fetch
+      return fetch(GUIDE_PATH).then(r => r.ok ? r.text() : Promise.reject('HTTP ' + r.status)).then(null, () => 'Could not load guide.');
+    }
+  } else {
+    return fetch(GUIDE_PATH)
+      .then(r => r.ok ? r.text() : Promise.reject('HTTP ' + r.status))
+      .catch(e => { console.error('Guide load failed (web):', e); return 'Could not load guide.'; });
+  }
 }
 
 // minimal markdown -> html for the subset BIOT-GUIDE.md uses
@@ -24,22 +44,16 @@ function mdToHtml(md) {
   for (const raw of md.split('\n')) {
     const t = raw.trim();
     if (t.startsWith('```')) {
-      flush();
-      out.push(inCode ? '</pre>' : '<pre>');
-      inCode = !inCode;
-      continue;
+      flush(); out.push(inCode ? '</pre>' : '<pre>'); inCode = !inCode; continue;
     }
     if (inCode) { out.push(escapeHtml(raw)); continue; }
-
-    // indented continuation of the current list item (e.g. wrapped text)
     if (inList && t !== '' && /^\s/.test(raw)) {
       out[out.length - 1] = out[out.length - 1].replace('</li>', ' ' + inline(t) + '</li>');
       continue;
     }
-
     if (t.startsWith('|') && t.endsWith('|')) {
       closeList();
-      if (/^\|[\s:|-]+\|$/.test(t)) continue; // separator row
+      if (/^\|[\s:|-]+\|$/.test(t)) continue;
       if (!inTable) { out.push('<table>'); inTable = true; tableRow = 0; }
       const cells = t.slice(1, -1).split('|').map(c => inline(c.trim()));
       const tag = tableRow === 0 ? 'th' : 'td';
@@ -48,10 +62,8 @@ function mdToHtml(md) {
       continue;
     }
     closeTable();
-
     if (t.startsWith('# ')) { flush(); out.push('<h1>' + inline(t.slice(2)) + '</h1>'); continue; }
     if (t.startsWith('## ')) { flush(); out.push('<h2>' + inline(t.slice(3)) + '</h2>'); continue; }
-
     const bullet = t.match(/^[-*] (.*)/);
     if (bullet) {
       if (!inList || listType !== 'ul') { flush(); out.push('<ul>'); inList = true; listType = 'ul'; }
@@ -64,7 +76,6 @@ function mdToHtml(md) {
       out.push('<li>' + inline(num[1]) + '</li>');
       continue;
     }
-
     flush();
     if (t === '') continue;
     out.push('<p>' + inline(t) + '</p>');
@@ -76,17 +87,17 @@ function mdToHtml(md) {
 class Guide {
   constructor() {
     this.visible = false;
+    this.loaded = false;
     const el = document.createElement('div');
     el.id = 'biot-guide';
     el.innerHTML = `
       <style>
         #biot-guide { position:fixed; top:5vh; left:50%; transform:translateX(-50%);
-                      width:min(720px,90vw); max-height:88vh; overflow:auto; z-index:200;
-                      background:#000; color:#cfc; border:2px solid #0f0;
-                      font:14px "Courier New", monospace; display:none;
-                      box-shadow:0 0 24px rgba(0,255,0,0.25); }
+                       width:min(720px,90vw); max-height:88vh; overflow:auto; z-index:200;
+                       background:#000; color:#cfc; border:2px solid #0f0;
+                       font:14px "Courier New", monospace; display:none; }
         #biot-guide .guide-title { position:sticky; top:0; background:#010; color:#ff0;
-                      padding:6px 10px; border-bottom:1px solid #040; font-weight:bold; }
+                       padding:6px 10px; border-bottom:1px solid #040; font-weight:bold; }
         #biot-guide .guide-close { float:right; cursor:pointer; color:#f88; }
         #biot-guide .guide-body { padding:8px 16px 20px; line-height:1.45; }
         #biot-guide h1 { color:#ff0; font-size:17px; border-bottom:1px solid #040; }
@@ -101,17 +112,16 @@ class Guide {
         #biot-guide li { margin:3px 0; }
       </style>
       <div class="guide-title">BIOT FIELD GUIDE <span class="guide-close" id="guide-close">[X]</span></div>
-      <div class="guide-body" id="guide-body"></div>
+      <div class="guide-body" id="guide-body">Loading guide...</div>
     `;
     document.body.appendChild(el);
     this.el = el;
-    try {
-      const md = fs.readFileSync(GUIDE_PATH, 'utf8');
-      el.querySelector('#guide-body').innerHTML = mdToHtml(md);
-    } catch (e) {
-      el.querySelector('#guide-body').textContent = 'Could not load BIOT-GUIDE.md: ' + e.message;
-    }
     el.querySelector('#guide-close').onclick = () => this.hide();
+
+    loadGuide().then(md => {
+      el.querySelector('#guide-body').innerHTML = mdToHtml(md);
+      this.loaded = true;
+    });
   }
 
   show() { this.visible = true; this.el.style.display = 'block'; }
@@ -119,4 +129,4 @@ class Guide {
   toggle() { this.visible ? this.hide() : this.show(); }
 }
 
-module.exports = { Guide, mdToHtml };
+module.exports = { Guide, mdToHtml, loadGuide };
