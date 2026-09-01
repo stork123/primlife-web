@@ -1,0 +1,6 @@
+{
+  "appId": "com.primlife.app",
+  "appName": "Primordial Life",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

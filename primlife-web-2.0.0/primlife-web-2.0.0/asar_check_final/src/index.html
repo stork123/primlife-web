@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Primordial Life</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100%; }
+  canvas { display: block; }
+  #hud {
+    position: fixed; top: 8px; left: 10px; color: #0f0; z-index: 5;
+    font: 12px "Courier New", monospace; text-shadow: 0 0 4px #0f0;
+    background: rgba(0,0,0,0.55); padding: 6px 10px; border: 1px solid #030;
+    pointer-events: none; white-space: pre;
+  }
+  #inspector {
+    position: fixed; top: 8px; right: 10px; color: #6ff; z-index: 5;
+    font: 12px "Courier New", monospace; background: rgba(0,0,0,0.7);
+    padding: 6px 10px; border: 1px solid #033; white-space: pre; display: none;
+  }
+  #help {
+    position: fixed; bottom: 8px; left: 10px; color: #666; z-index: 5;
+    font: 11px "Courier New", monospace;
+  }
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+<div id="hud"></div>
+<div id="inspector"></div>
+<div id="help">[SPACE] pause &nbsp; [R] restart &nbsp; [+/-] sim speed &nbsp; [S] sound &nbsp; [G] field guide &nbsp; [E] biot editor &nbsp; [click] inspect biot &nbsp; [F11] fullscreen &nbsp; [ESC] quit</div>
+<script src="render.js"></script>
+</body>
+</html>

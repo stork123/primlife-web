@@ -2599,6 +2599,7 @@
       env.height = canvas.height;
     }
   });
+  newWorld();
   window.addEventListener("keydown", (e) => {
     const tag = (e.target.tagName || "").toUpperCase();
     if (["INPUT", "SELECT", "TEXTAREA"].includes(tag) || e.target.isContentEditable) return;

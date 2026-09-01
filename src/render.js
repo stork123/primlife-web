@@ -51,6 +51,9 @@ window.addEventListener('resize', () => {
   if (env) { env.width = canvas.width; env.height = canvas.height; }
 });
 
+// Start the simulation
+newWorld();
+
 window.addEventListener('keydown', (e) => {
   // Don't let hotkeys fire when typing into inputs / selects / textareas
   const tag = (e.target.tagName || '').toUpperCase();
