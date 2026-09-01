@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Primordial Life</string>
+    <string name="title_activity_main">Primordial Life</string>
+    <string name="package_name">com.primlife.app</string>
+    <string name="custom_url_scheme">com.primlife.app</string>
+</resources>
