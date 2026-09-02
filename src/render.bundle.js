@@ -2707,7 +2707,8 @@ blue: ${b.colorDistance[1]}  white: ${b.colorDistance[4]}  lblue: ${b.colorDista
     } catch (e) {
       console.error("draw error:", e);
     }
-    hud.textContent = `Primordial Life  |  pop ${env.biots.length}  gen ${env.stats.generation}  births ${env.stats.births}  deaths ${env.stats.deaths}  extinctions ${env.stats.extinctions}` + (Sounds.isEnabled() ? "" : "  [MUTED]") + (paused ? "  [PAUSED]" : stepsPerFrame > 1 ? `  x${stepsPerFrame}` : "");
+    hud.textContent = `Primordial Life  |  pop ${env.biots.length}  gen ${env.stats.generation}
+births ${env.stats.births}  deaths ${env.stats.deaths}  extinctions ${env.stats.extinctions}` + (Sounds.isEnabled() ? "" : "  [MUTED]") + (paused ? "  [PAUSED]" : stepsPerFrame > 1 ? `  x${stepsPerFrame}` : "");
     updateInspector();
     requestAnimationFrame(frame);
   }

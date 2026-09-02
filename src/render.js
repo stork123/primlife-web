@@ -149,9 +149,8 @@ function frame() {
   for (const b of env.biots) drawBiot(b);
   } catch (e) { console.error('draw error:', e); }
   hud.textContent =
-    `Primordial Life  |  pop ${env.biots.length}  gen ${env.stats.generation}` +
-    `  births ${env.stats.births}  deaths ${env.stats.deaths}` +
-    `  extinctions ${env.stats.extinctions}` +
+    `Primordial Life  |  pop ${env.biots.length}  gen ${env.stats.generation}\n` +
+    `births ${env.stats.births}  deaths ${env.stats.deaths}  extinctions ${env.stats.extinctions}` +
     (Sounds.isEnabled() ? '' : '  [MUTED]') +
     (paused ? '  [PAUSED]' : (stepsPerFrame > 1 ? `  x${stepsPerFrame}` : ''));
   updateInspector();
