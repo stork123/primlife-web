@@ -1,14 +1,24 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.primlife.app"
+    namespace = "com.primordiallife.app"
     compileSdk = rootProject.ext.compileSdkVersion
+    
+    signingConfigs {
+        release {
+            storeFile file("C:/Users/guyut/.android/release/primlife-release.keystore")
+            storePassword "primlife2026"
+            keyAlias "primlife"
+            keyPassword "primlife2026"
+        }
+    }
+    
     defaultConfig {
-        applicationId "com.primlife.app"
+        applicationId "com.primordiallife.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 200
+        versionName "2.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -20,6 +30,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }

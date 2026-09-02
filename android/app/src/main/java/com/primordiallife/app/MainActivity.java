@@ -1,4 +1,4 @@
-package com.primlife.app;
+package com.primordiallife.app;
 
 import com.getcapacitor.BridgeActivity;
 
