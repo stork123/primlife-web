@@ -13,6 +13,29 @@ function inline(s) {
   return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\*(.+?)\*/g, '<i>$1</i>');
 }
 
+<<<<<<< Updated upstream
+=======
+// Load guide markdown — async in web mode, sync in Electron
+function loadGuide() {
+  if (isElectron) {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const p = path.join(__dirname, '..', 'docs', 'BIOT-GUIDE.md');
+      try { return Promise.resolve(fs.readFileSync(p, 'utf8')); }
+      catch (e) { console.error('Guide load failed (Electron):', e); return Promise.resolve('Could not load guide.'); }
+    } catch (e) {
+      // fs not available — fallback to fetch
+      return fetch(GUIDE_PATH).then(r => r.ok ? r.text() : Promise.reject('HTTP ' + r.status)).then(null, () => 'Could not load guide.');
+    }
+  } else {
+    return fetch(GUIDE_PATH)
+      .then(r => r.ok ? r.text() : Promise.reject('HTTP ' + r.status))
+      .catch(e => { console.error('Guide load failed (web):', e); return 'Could not load guide.'; });
+  }
+}
+
+>>>>>>> Stashed changes
 // minimal markdown -> html for the subset BIOT-GUIDE.md uses
 function mdToHtml(md) {
   const out = [];
