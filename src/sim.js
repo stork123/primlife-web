@@ -820,7 +820,7 @@ class Environment {
       startEnergy: 400 * 8, friction: 0.005, chance: 12,
       initialPopulation: 20, nSexual: 3, nSick: 200,
       armsPerBiot: 0, typesPerBiot: 0, segmentsPerArm: 0,
-      maxPopulation: 250,  // cap to prevent O(n²) collision slowdown freeze
+      maxPopulation: 500,  // with spatial hashing, O(n) grid lookup per biot
       leafMass: null, leafContact: null, newType: null
     }, opts || {});
     // leafContact matrix
@@ -845,6 +845,8 @@ class Environment {
     this.cursor = 0;
     this.sampleCounter = 0;
     this.listeners = {};
+    this.gridSize = 120; // cell size for spatial hashing
+    this.grid = new Map();
     this.createBiots();
   }
   on(event, fn) { (this.listeners[event] = this.listeners[event] || []).push(fn); }
@@ -859,36 +861,49 @@ class Environment {
     }
   }
   hitCheck(me) {
-    for (const b of this.biots) {
-      if (b === me) continue;
-      if (rectsTouch(me, b)) return b;
+    // Spatial hash: check current cell + 8 neighbors
+    const cx = Math.floor(me.left / this.gridSize);
+    const cy = Math.floor(me.top / this.gridSize);
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const key = (cx+dx) + ',' + (cy+dy);
+        const nearby = this.grid.get(key);
+        if (!nearby) continue;
+        for (const b of nearby) {
+          if (b === me) continue;
+          if (rectsTouch(me, b)) return b;
+        }
+      }
     }
     return null;
   }
   findIntersecting(me) {
     const out = [];
-    for (const b of this.biots) {
-      if (b === me) continue;
-      if (rectsTouch(me, b)) out.push(b);
+    const cx = Math.floor(me.left / this.gridSize);
+    const cy = Math.floor(me.top / this.gridSize);
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const key = (cx+dx) + ',' + (cy+dy);
+        const nearby = this.grid.get(key);
+        if (!nearby) continue;
+        for (const b of nearby) {
+          if (b === me) continue;
+          if (rectsTouch(me, b)) out.push(b);
+        }
+      }
     }
     return out;
   }
   // one full pass over all biots (== one "generation" tick of the original Skip loop)
   step() {
-    // population cap: prevent O(n²) collision check blowup from freezing the sim
-    if (this.biots.length > this.options.maxPopulation) {
-      this.stats.generation++;
-      // still decay population via starvation; skip movement/collisions
-      const toRemove = [];
-      for (let i = 0; i < this.biots.length; i++) {
-        const b = this.biots[i];
-        b.age++;
-        b.energy -= b.totalDistance || 1; // starvation drain
-        if (b.energy <= 0 || b.totalDistance <= 0) { this.stats.deaths++; toRemove.push(i); }
-      }
-      for (let i = toRemove.length - 1; i >= 0; i--) this.biots.splice(toRemove[i], 1);
-      if (this.biots.length === 0) { this.stats.extinctions++; this.emit('extinction'); this.createBiots(); }
-      return;
+    // rebuild spatial hash grid for this frame
+    this.grid.clear();
+    for (const b of this.biots) {
+      const cx = Math.floor(b.left / this.gridSize);
+      const cy = Math.floor(b.top / this.gridSize);
+      const key = cx + ',' + cy;
+      if (!this.grid.has(key)) this.grid.set(key, []);
+      this.grid.get(key).push(b);
     }
     for (let i = 0; i < this.biots.length; i++) {
       const b = this.biots[i];
